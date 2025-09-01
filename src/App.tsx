@@ -7,6 +7,7 @@ import { UserWarning } from './UserWarning';
 import * as todosService from './api/todos';
 import classNames from 'classnames';
 import { Todo } from './types/Todos';
+import { set } from 'cypress/types/lodash';
 
 export const App: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
@@ -43,6 +44,7 @@ export const App: React.FC = () => {
   }, [todos]);
 
   const addTodo = ({ title, completed, userId }: Todo) => {
+    setIsLoading(true);
     setErrorMessage('');
     if (title.length === 0) {
       setErrorMessage('Title is required');
@@ -50,12 +52,16 @@ export const App: React.FC = () => {
       return;
     }
 
-    todosService.addTodo({ title, completed, userId }).then(newTodo => {
-      setTodos(prevTodos => [...prevTodos, newTodo]);
-    });
+    todosService
+      .addTodo({ title, completed, userId })
+      .then(newTodo => {
+        setTodos(prevTodos => [...prevTodos, newTodo]);
+      })
+      .finally(() => setIsLoading(false));
   };
 
   const deleteTodo = (todoId: number) => {
+    setIsLoading(true);
     setErrorMessage('');
 
     todosService
@@ -66,7 +72,8 @@ export const App: React.FC = () => {
       .catch(error => {
         setErrorMessage('Unable to delete a todo');
         throw error;
-      });
+      })
+      .finally(() => setIsLoading(false));
   };
 
   const onTodoSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -131,6 +138,31 @@ export const App: React.FC = () => {
         </header>
 
         <section className="todoapp__main" data-cy="TodoList">
+          <div data-cy="Todo" className="todo">
+            <label className="todo__status-label">
+              <input
+                data-cy="TodoStatus"
+                type="checkbox"
+                className="todo__status"
+              />
+            </label>
+
+            {/* This form is shown instead of the title and remove button */}
+            <form>
+              <input
+                data-cy="TodoTitleField"
+                type="text"
+                className="todo__title-field"
+                placeholder="Empty todo will be deleted"
+                value="Todo is being edited now"
+              />
+            </form>
+
+            <div data-cy="TodoLoader" className="modal overlay">
+              <div className="modal-background has-background-white-ter" />
+              <div className="loader" />
+            </div>
+          </div>
           {filtredTodos(filterBy).map(todo =>
             todo.completed ? (
               <div
@@ -163,13 +195,15 @@ export const App: React.FC = () => {
                     ×
                   </button>
                 )}
-
-                {isLoading && (
-                  <div data-cy="TodoLoader" className="modal overlay">
-                    <div className="modal-background has-background-white-ter" />
-                    <div className="loader" />
-                  </div>
-                )}
+                <div
+                  data-cy="TodoLoader"
+                  className={classNames('modal overlay', {
+                    'is-active': isLoading,
+                  })}
+                >
+                  <div className="modal-background has-background-white-ter" />
+                  <div className="loader" />
+                </div>
               </div>
             ) : (
               <div
@@ -202,12 +236,15 @@ export const App: React.FC = () => {
                     ×
                   </button>
                 )}
-                {isLoading && (
-                  <div data-cy="TodoLoader" className="modal overlay">
-                    <div className="modal-background has-background-white-ter" />
-                    <div className="loader" />
-                  </div>
-                )}
+                <div
+                  data-cy="TodoLoader"
+                  className={classNames('modal overlay', {
+                    'is-active': isLoading,
+                  })}
+                >
+                  <div className="modal-background has-background-white-ter" />
+                  <div className="loader" />
+                </div>
               </div>
             ),
           )}
