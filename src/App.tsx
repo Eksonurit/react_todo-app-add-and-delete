@@ -7,16 +7,16 @@ import { UserWarning } from './UserWarning';
 import * as todosService from './api/todos';
 import classNames from 'classnames';
 import { Todo } from './types/Todos';
-import { set } from 'cypress/types/lodash';
 
 export const App: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [onTodoHover, setOnTodoHover] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [filterBy, setFilterBy] = useState<string | null>(null);
   const [anyCompleted, setAnyCompleted] = useState(false);
   const [newTodoTitle, setNewTodoTitle] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [processingIds, setProcessingIds] = useState<number[]>([]);
+  const [tempTodo, setTempTodo] = useState<Todo | null>(null);
 
   const handleOnHover = (event: React.MouseEvent<HTMLDivElement>) => {
     if (event.type === 'mouseover') {
@@ -27,15 +27,13 @@ export const App: React.FC = () => {
   };
 
   useEffect(() => {
-    setIsLoading(true);
     todosService
       .getTodos()
       .then(setTodos)
       .catch(error => {
         setErrorMessage('Unable to load todos');
         throw error;
-      })
-      .finally(() => setIsLoading(false));
+      });
   }, []);
 
   useEffect(() => {
@@ -44,36 +42,30 @@ export const App: React.FC = () => {
   }, [todos]);
 
   const addTodo = ({ title, completed, userId }: Todo) => {
-    setIsLoading(true);
-    setErrorMessage('');
-    if (title.length === 0) {
+    if (!title.trim()) {
       setErrorMessage('Title is required');
 
       return;
     }
 
+    setTempTodo({ id: 0, title, completed, userId });
     todosService
       .addTodo({ title, completed, userId })
       .then(newTodo => {
-        setTodos(prevTodos => [...prevTodos, newTodo]);
+        setTodos(prev => [...prev, newTodo]);
+        setNewTodoTitle('');
       })
-      .finally(() => setIsLoading(false));
+      .catch(() => setErrorMessage('Unable to add a todo'))
+      .finally(() => setTempTodo(null)); // ховаємо tempTodo
   };
 
   const deleteTodo = (todoId: number) => {
-    setIsLoading(true);
-    setErrorMessage('');
-
+    setProcessingIds(ids => [...ids, todoId]);
     todosService
       .deleteTodo(todoId)
-      .then(() => {
-        setTodos(prevTodos => prevTodos.filter(todo => todo.id !== todoId));
-      })
-      .catch(error => {
-        setErrorMessage('Unable to delete a todo');
-        throw error;
-      })
-      .finally(() => setIsLoading(false));
+      .then(() => setTodos(prev => prev.filter(todo => todo.id !== todoId)))
+      .catch(() => setErrorMessage('Unable to delete a todo'))
+      .finally(() => setProcessingIds(ids => ids.filter(id => id !== todoId)));
   };
 
   const onTodoSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -138,31 +130,6 @@ export const App: React.FC = () => {
         </header>
 
         <section className="todoapp__main" data-cy="TodoList">
-          <div data-cy="Todo" className="todo">
-            <label className="todo__status-label">
-              <input
-                data-cy="TodoStatus"
-                type="checkbox"
-                className="todo__status"
-              />
-            </label>
-
-            {/* This form is shown instead of the title and remove button */}
-            <form>
-              <input
-                data-cy="TodoTitleField"
-                type="text"
-                className="todo__title-field"
-                placeholder="Empty todo will be deleted"
-                value="Todo is being edited now"
-              />
-            </form>
-
-            <div data-cy="TodoLoader" className="modal overlay">
-              <div className="modal-background has-background-white-ter" />
-              <div className="loader" />
-            </div>
-          </div>
           {filtredTodos(filterBy).map(todo =>
             todo.completed ? (
               <div
@@ -198,7 +165,7 @@ export const App: React.FC = () => {
                 <div
                   data-cy="TodoLoader"
                   className={classNames('modal overlay', {
-                    'is-active': isLoading,
+                    'is-active': processingIds.includes(todo.id),
                   })}
                 >
                   <div className="modal-background has-background-white-ter" />
@@ -239,7 +206,7 @@ export const App: React.FC = () => {
                 <div
                   data-cy="TodoLoader"
                   className={classNames('modal overlay', {
-                    'is-active': isLoading,
+                    'is-active': processingIds.includes(todo.id),
                   })}
                 >
                   <div className="modal-background has-background-white-ter" />
@@ -247,6 +214,22 @@ export const App: React.FC = () => {
                 </div>
               </div>
             ),
+          )}
+          {tempTodo && (
+            <div className="todo">
+              <label className="todo__status-label">
+                <input
+                  data-cy="TodoStatus"
+                  type="checkbox"
+                  className="todo__status"
+                />
+              </label>
+              <span className="todo__title">{tempTodo.title}</span>
+              <div className="modal overlay is-active">
+                <div className="modal-background has-background-white-ter" />
+                <div className="loader" />
+              </div>
+            </div>
           )}
         </section>
 
