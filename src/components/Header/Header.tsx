@@ -2,12 +2,16 @@ interface Props {
   onTodoSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   newTodoTitle: string;
   setNewTodoTitle: (value: string) => void;
+  isDisabled: boolean;
+  inputRef: React.RefObject<HTMLInputElement>;
 }
 
 export const Header: React.FC<Props> = ({
   onTodoSubmit,
   newTodoTitle,
   setNewTodoTitle,
+  inputRef,
+  isDisabled,
 }) => {
   return (
     <header className="todoapp__header">
@@ -24,11 +28,13 @@ export const Header: React.FC<Props> = ({
           data-cy="NewTodoField"
           type="text"
           value={newTodoTitle}
+          disabled={isDisabled}
           onChange={e => {
             setNewTodoTitle(e.target.value);
           }}
           className="todoapp__new-todo"
           placeholder="What needs to be done?"
+          ref={inputRef}
         />
       </form>
     </header>

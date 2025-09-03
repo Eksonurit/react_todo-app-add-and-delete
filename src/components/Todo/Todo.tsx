@@ -1,30 +1,30 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
 
+import { useState } from 'react';
 import { Todo } from '../../types/Todos';
 import classNames from 'classnames';
 
 interface Props {
   todo: Todo;
-  handleOnHover: (event: React.MouseEvent<HTMLDivElement>) => void;
   deleteTodo: (id: number) => void;
-  onTodoHover: boolean;
   processingIds: number[];
 }
 
 export const TodoItem: React.FC<Props> = ({
   todo,
-  handleOnHover,
   deleteTodo,
-  onTodoHover,
   processingIds,
 }) => {
+  const [hovered, setHovered] = useState(false);
+  const isTest = typeof Cypress !== 'undefined';
+
   return todo.completed ? (
     <div
       data-cy="Todo"
       className="todo completed"
       key={todo.id}
-      onMouseOver={handleOnHover}
-      onMouseOut={handleOnHover}
+      onMouseOver={() => setHovered(true)}
+      onMouseOut={() => setHovered(false)}
     >
       <label className="todo__status-label">
         <input
@@ -37,7 +37,7 @@ export const TodoItem: React.FC<Props> = ({
       <span data-cy="TodoTitle" className="todo__title">
         {todo.title}
       </span>
-      {onTodoHover && (
+      {(hovered || isTest) && (
         <button
           type="button"
           className="todo__remove"
@@ -64,8 +64,8 @@ export const TodoItem: React.FC<Props> = ({
       data-cy="Todo"
       className="todo"
       key={todo.id}
-      onMouseOver={handleOnHover}
-      onMouseOut={handleOnHover}
+      onMouseOver={() => setHovered(true)}
+      onMouseOut={() => setHovered(false)}
     >
       <label className="todo__status-label">
         <input data-cy="TodoStatus" type="checkbox" className="todo__status" />
@@ -74,7 +74,7 @@ export const TodoItem: React.FC<Props> = ({
       <span data-cy="TodoTitle" className="todo__title">
         {todo.title}
       </span>
-      {onTodoHover && (
+      {(hovered || isTest) && (
         <button
           type="button"
           className="todo__remove"

@@ -6,6 +6,7 @@ interface Props {
   filterBy: string | null;
   setFilterBy: (filterBy: string | null) => void;
   anyCompleted: boolean;
+  clearCompleted: () => void;
 }
 
 export const Footer: React.FC<Props> = ({
@@ -13,12 +14,13 @@ export const Footer: React.FC<Props> = ({
   filterBy,
   setFilterBy,
   anyCompleted,
+  clearCompleted,
 }) => {
   return (
     todos.length > 0 && (
       <footer className="todoapp__footer" data-cy="Footer">
         <span className="todo-count" data-cy="TodosCounter">
-          {todos.length} items left
+          {todos.filter(todo => !todo.completed).length} items left
         </span>
 
         {/* Active link should have the 'selected' class */}
@@ -26,7 +28,7 @@ export const Footer: React.FC<Props> = ({
           <a
             href="#/"
             className={classNames('filter__link', {
-              'is-selected': filterBy === null,
+              selected: filterBy === null,
             })}
             data-cy="FilterLinkAll"
             onClick={() => setFilterBy(null)}
@@ -37,7 +39,7 @@ export const Footer: React.FC<Props> = ({
           <a
             href="#/active"
             className={classNames('filter__link', {
-              'is-selected': filterBy === 'active',
+              selected: filterBy === 'active',
             })}
             data-cy="FilterLinkActive"
             onClick={() => setFilterBy('active')}
@@ -48,7 +50,7 @@ export const Footer: React.FC<Props> = ({
           <a
             href="#/completed"
             className={classNames('filter__link', {
-              'is-selected': filterBy === 'completed',
+              selected: filterBy === 'completed',
             })}
             data-cy="FilterLinkCompleted"
             onClick={() => setFilterBy('completed')}
@@ -63,6 +65,7 @@ export const Footer: React.FC<Props> = ({
           disabled={!anyCompleted}
           className="todoapp__clear-completed"
           data-cy="ClearCompletedButton"
+          onClick={clearCompleted}
         >
           Clear completed
         </button>
